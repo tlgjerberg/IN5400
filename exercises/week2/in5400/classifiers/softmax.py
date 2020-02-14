@@ -31,19 +31,27 @@ def softmax_loss_naive(W, X, y):
     # regularization!                                                           #
     #############################################################################
 
-    z = np.matmul(X, W)
+    print("X", X.shape)
+    print("W", W.shape)
+    C = W.shape[1]  # Number of classes
+    D = W.shape[0]  # Number of dimensions
+    N = X.shape[0]  # Number of examples in minibatch
+
+    print(C, D, N)
+
+    z = X @ W
     z -= np.max(z)
     print(z.shape)
     nx, ny = z.shape
-    s = np.zeros((nx, ny))
+    s = 0
 
-    for k in range(nx):
+    for k in range(N):
 
-        for i in range(ny):
+        for i in range(C):
 
-            s[k, :] += np.exp(z[k]) / np.exp(z[i])
+            s += np.exp(z[k]) / np.exp(z[i])
 
-            loss += -np.log(s[k, i])
+            loss += -np.log(s)
     dW = loss * (1 - loss)
 
     # loss=[]
