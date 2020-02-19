@@ -147,9 +147,19 @@ def cross_entropy_cost(Y_proposed, Y_reference):
         num_correct: Scalar integer
     """
     # TODO: Task 1.3
+
     m = Y_proposed.shape[1]
     cost = -1. / m * np.sum(Y_reference * np.log(Y_proposed))
-    num_correct = None
+
+    # Setting the largest element of each column = 1 and other elements to 0
+    row_maxes = Y_proposed.max(axis=0, keepdims=True)
+    np.where(Y_proposed == row_maxes, 1, 0)
+    Y_proposed[:] = np.where(Y_proposed == row_maxes, 1, 0)
+
+    for i in range(m):
+        difference = np.where(Y_proposed[:, i] - Y_reference[:, i] == 0, 1, 0)
+
+    num_correct = np.sum(difference)
 
     return cost, num_correct
 
@@ -164,7 +174,7 @@ def activation_derivative(Z, activation_function):
     """
     # TODO: Task 1.4 a)
     if activation_function == 'relu':
-        return None
+        return np.where(Z >= 0, 1, 0)
     else:
         print("Error: Unimplemented derivative of activation function: {}",
               activation_function)
@@ -189,7 +199,9 @@ def backward(conf, Y_proposed, Y_reference, params, features):
                 - the gradient of the biases grad_b^[l] for l in [1, L].
     """
     # TODO: Task 1.4 b)
-    grad_params = None
+    grad_params = {}
+    for l in range(conf['layer_dimensions']):
+
     return grad_params
 
 
