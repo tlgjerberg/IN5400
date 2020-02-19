@@ -47,15 +47,14 @@ def initialization(conf):
 
     params = {}
 
-    # print(conf['layer_dimensions'])
     for j in range(len(conf['layer_dimensions'])):
 
         b = np.zeros(conf['layer_dimensions'][j])
         W = np.random.normal(
             0.0, 0.1, size=[conf['layer_dimensions'][j] - 1, conf['layer_dimensions'][j]])
-        print(W.shape)
-        print(b.shape)
+
         params.update({f'W{j}': W})
+        params.update({f'b{j}': b})
 
     return params
 
@@ -92,7 +91,6 @@ def softmax(Z):
 
     Z_ = Z - np.max(Z)
 
-    s = np.exp(Z_ / np.sum(np.exp(Z_), axis=0))
     t = Z_ - np.log(np.sum(np.exp(Z_), axis=0))
     return np.exp(t)
 
@@ -119,22 +117,20 @@ def forward(conf, X_batch, params, is_training):
                We cache them in order to use them when computing gradients in the backpropagation.
     """
     # TODO: Task 1.2 c)
-    print('X', X_batch.shape)
-    print(conf['layer_dimensions'])
     Y_proposed = np.zeros((conf['layer_dimensions'][-1], X_batch.shape[1]))
 
     features = {}
     features.update({'A_0': X_batch})
-    # for key, value in sorted(params.items()):
-    for l in range(len(conf['layer_dimensions'])):
-        # print(key[2])
-        # print(params[key].shape)
-        # Z = params[key].T @ features[f'']
-        Z = params[f'W{l}'].T @ features[f'A_{l}']
-        # features.update({f'Z_{key[2]}': Z})
+
+    for l in range(1, len(conf['layer_dimensions'])):
+
+        Z = params[f'W_{l}'].T @ features[f'A_{l-1}'] + params[f'b_{l}']
         features.update({f'Z_{l}': Z})
         A = activation(Z, 'relu')
         features.update({f'A_{l}': A})
+
+    A = softmax(Z)
+    Y_proposed = A
     return Y_proposed, features
 
 
@@ -151,7 +147,8 @@ def cross_entropy_cost(Y_proposed, Y_reference):
         num_correct: Scalar integer
     """
     # TODO: Task 1.3
-    cost = None
+    m = Y_proposed.shape[1]
+    cost = -1. / m * np.sum(Y_reference * np.log(Y_proposed))
     num_correct = None
 
     return cost, num_correct
