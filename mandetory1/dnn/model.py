@@ -199,8 +199,31 @@ def backward(conf, Y_proposed, Y_reference, params, features):
                 - the gradient of the biases grad_b^[l] for l in [1, L].
     """
     # TODO: Task 1.4 b)
+    L = len(conf['layer_dimensions'])
+    m = Y_proposed.shape[1]
+    J_L = Y_reference - Y_proposed
     grad_params = {}
-    for l in range(conf['layer_dimensions']):
+    for l in range(L, 1, -1):
+        Z = features[f'Z_{l-1}']
+        A = features[f'A_{l-1}']
+        g_prime = activation_derivative(Z, 'relu')
+        J = np.multiply(g_prime, params[f'W_{l-1}'] @ J_L)
+        grad_W = A @ J.T
+        grad_params.update({f'grad_W_{l}': grad_W})
+        J_L = J
+    # for l in range(1, L):
+    #     print(params[f'W_{l}'].shape, J_L.shape)
+    #     print('l: ', l)
+    #     Z = features[f'Z_{l}']
+    #     A = features[f'A_{l-1}']
+    #     g_prime = activation_derivative(Z, 'relu')
+    #     J = np.multiply(g_prime, params[f'W_{l}'] @ J_L)
+    #     M = m * np.ones(J.shape[1])
+    #     grad_W = 1 / m * A @ J.T
+    #     grad_b = 1 / m * J @ M
+    #     grad_params.update({f'grad_W_{l}': grad_W})
+    #     grad_params.update({f'grad_b_{l}': grad_b})
+    #     J_L = J
 
     return grad_params
 
