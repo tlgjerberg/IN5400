@@ -47,14 +47,19 @@ def initialization(conf):
 
     params = {}
 
-    for j in range(len(conf['layer_dimensions'])):
+    L = len(conf['layer_dimensions']) - 1
+
+    for j in range(1, L):
 
         b = np.zeros(conf['layer_dimensions'][j])
         W = np.random.normal(
-            0.0, 0.1, size=[conf['layer_dimensions'][j] - 1, conf['layer_dimensions'][j]])
+            0.0, np.sqrt(
+                2 / conf['layer_dimensions'][j]),
+            size=[conf['layer_dimensions'][j - 1],
+                  conf['layer_dimensions'][j]])
 
-        params.update({f'W{j}': W})
-        params.update({f'b{j}': b})
+        params.update({f'W_{j}': W})
+        params.update({f'b_{j}': b})
 
     return params
 
@@ -117,14 +122,22 @@ def forward(conf, X_batch, params, is_training):
                We cache them in order to use them when computing gradients in the backpropagation.
     """
     # TODO: Task 1.2 c)
-    Y_proposed = np.zeros((conf['layer_dimensions'][-1], X_batch.shape[1]))
+
+    Y_proposed = np.zeros((conf['layer_dimensions'][-1], X_batch.shape[0]))
+
+    L = len(conf['layer_dimensions']) - 1
+
+    print('X_batch', X_batch.shape)
 
     features = {}
     features.update({'A_0': X_batch})
 
-    for l in range(1, len(conf['layer_dimensions'])):
-
-        Z = params[f'W_{l}'].T @ features[f'A_{l-1}'] + params[f'b_{l}']
+    for l in range(1, L + 1):
+        print()
+        print(f'W_{l}', params[f'W_{l}'].T.shape)
+        print(f'A_{l-1}', features[f'A_{l-1}'].shape)
+        Z = np.dot(params[f'W_{l}'].T, features[f'A_{l-1}']) + params[f'b_{l}']
+        print('Z', Z.shape)
         features.update({f'Z_{l}': Z})
         A = activation(Z, 'relu')
         features.update({f'A_{l}': A})
@@ -199,31 +212,36 @@ def backward(conf, Y_proposed, Y_reference, params, features):
                 - the gradient of the biases grad_b^[l] for l in [1, L].
     """
     # TODO: Task 1.4 b)
-    L = len(conf['layer_dimensions'])
-    m = Y_proposed.shape[1]
-    J_L = Y_reference - Y_proposed
+
     grad_params = {}
-    for l in range(L, 1, -1):
-        Z = features[f'Z_{l-1}']
+
+    # Backpropagation of output layer
+    L = len(conf['layer_dimensions']) - 1
+    m = Y_proposed.shape[1]
+    J_L = Y_proposed - Y_reference
+
+    grad_W = (1 / m) * features[f'A_{L-1}'] @ J_L.T
+    grad_b = (1 / m) * J_L @ np.ones(m)
+
+    grad_params.update({f'grad_W_{L}': grad_W})
+    grad_params.update({f'grad_b_{L}': grad_b.reshape(len(grad_b), 1)})
+
+    # Backpropagation of hidden layers
+    for l in range(L - 1, 0, -1):
+
+        # Fetching layers and activations
+        Z = features[f'Z_{l}']
         A = features[f'A_{l-1}']
+
         g_prime = activation_derivative(Z, 'relu')
-        J = np.multiply(g_prime, params[f'W_{l-1}'] @ J_L)
-        grad_W = A @ J.T
+        J = np.multiply(g_prime, params[f'W_{l+1}'] @ J_L)
+
+        grad_W = 1 / m * A @ J.T
+        grad_b = 1 / m * J @ np.ones(m)
         grad_params.update({f'grad_W_{l}': grad_W})
+        grad_params.update({f'grad_b_{l}': grad_b.reshape(len(grad_b), 1)})
+
         J_L = J
-    # for l in range(1, L):
-    #     print(params[f'W_{l}'].shape, J_L.shape)
-    #     print('l: ', l)
-    #     Z = features[f'Z_{l}']
-    #     A = features[f'A_{l-1}']
-    #     g_prime = activation_derivative(Z, 'relu')
-    #     J = np.multiply(g_prime, params[f'W_{l}'] @ J_L)
-    #     M = m * np.ones(J.shape[1])
-    #     grad_W = 1 / m * A @ J.T
-    #     grad_b = 1 / m * J @ M
-    #     grad_params.update({f'grad_W_{l}': grad_W})
-    #     grad_params.update({f'grad_b_{l}': grad_b})
-    #     J_L = J
 
     return grad_params
 
@@ -240,5 +258,13 @@ def gradient_descent_update(conf, params, grad_params):
         params: Updated parameter dictionary.
     """
     # TODO: Task 1.5
-    updated_params = None
+    updated_params = {}
+
+    lr = conf['learning_rate']
+
+    for key in params:
+
+        updated_params.update(
+            {key: params[key] - lr * grad_params[f'grad_{key}']})
+
     return updated_params

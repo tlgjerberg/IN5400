@@ -14,6 +14,7 @@
 
 import numpy as np
 
+
 def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
     """
     A naive implementation of the forward pass for a convolutional layer.
@@ -23,7 +24,7 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
     spans all C_i channels and has height H_w and width W_w.
 
     Args:
-        input_alyer: The input layer with shape (batch_size, channels_x, height_x, width_x)
+        input_layer: The input layer with shape (batch_size, channels_x, height_x, width_x)
         weight: Filter kernels with shape (num_filters, channels_x, height_w, width_w)
         bias: Biases of shape (num_filters)
 
@@ -31,10 +32,43 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
         output_layer: The output layer with shape (batch_size, num_filters, height_y, width_y)
     """
     # TODO: Task 2.1
-    output_layer = None # Should have shape (batch_size, num_filters, height_y, width_y)
+    # Should have shape (batch_size, num_filters, height_y, width_y)
+    output_layer = None
 
     (batch_size, channels_x, height_x, width_x) = input_layer.shape
     (num_filters, channels_w, height_w, width_w) = weight.shape
+
+    print(weight.shape)
+    print(input_layer.shape)
+
+    height_y = height_x
+    width_y = width_x
+
+    npad = ((0, 0), (0, 0), (pad_size, pad_size), (pad_size, pad_size))
+
+    input_padded = np.pad(input_layer, npad)
+
+    output_layer = np.zeros((batch_size, num_filters, height_y, width_y))
+
+    K = pad_size
+
+    for p in range(1, height_x):
+
+        for q in range(1, width_x):
+
+            for r in range(-K, K):
+
+                for s in range(-K, K):
+
+                    print(output_layer[p, q].shape)
+
+                    output_layer[p, q] += input_padded[p +
+                                                       r, q + s] @ weight[r, s]
+
+                    # for c in range(channels_x):
+                    #
+                    #     output_layer[:, c, p, q] += input_padded[:, c, p +
+                    #                                              r, q + s] @ weight[r, s]
 
     assert channels_w == channels_x, (
         "The number of filter channels be the same as the number of input layer channels")
