@@ -47,11 +47,11 @@ def initialization(conf):
 
     params = {}
 
-    L = len(conf['layer_dimensions']) - 1
+    L = len(conf['layer_dimensions'])
 
     for j in range(1, L):
 
-        b = np.zeros(conf['layer_dimensions'][j])
+        b = np.zeros((conf['layer_dimensions'][j], 1))
         W = np.random.normal(
             0.0, np.sqrt(
                 2 / conf['layer_dimensions'][j]),
@@ -127,23 +127,22 @@ def forward(conf, X_batch, params, is_training):
 
     L = len(conf['layer_dimensions']) - 1
 
-    print('X_batch', X_batch.shape)
-
     features = {}
     features.update({'A_0': X_batch})
 
-    for l in range(1, L + 1):
-        print()
-        print(f'W_{l}', params[f'W_{l}'].T.shape)
-        print(f'A_{l-1}', features[f'A_{l-1}'].shape)
+    for l in range(1, L):
+
         Z = np.dot(params[f'W_{l}'].T, features[f'A_{l-1}']) + params[f'b_{l}']
-        print('Z', Z.shape)
         features.update({f'Z_{l}': Z})
         A = activation(Z, 'relu')
         features.update({f'A_{l}': A})
 
+    Z = np.dot(params[f'W_{L}'].T, features[f'A_{L-1}']) + params[f'b_{L}']
     A = softmax(Z)
+    features.update({f'Z_{L}': Z})
+    features.update({f'A_{L}': A})
     Y_proposed = A
+
     return Y_proposed, features
 
 
