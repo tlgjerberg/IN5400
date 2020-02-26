@@ -25,7 +25,7 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
 
     Args:
         input_layer: The input layer with shape (batch_size, channels_x, height_x, width_x)
-        weight: Filter kernels with shape (num_filters, channels_x, height_w, width_w)
+        weight: Filter kernels with shape (num_filters, channels_w, height_w, width_w)
         bias: Biases of shape (num_filters)
 
     Returns:
@@ -38,11 +38,8 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
     (batch_size, channels_x, height_x, width_x) = input_layer.shape
     (num_filters, channels_w, height_w, width_w) = weight.shape
 
-    print(weight.shape)
-    print(input_layer.shape)
-
-    height_y = height_x
-    width_y = width_x
+    height_y = 1 + (height_x + 2 * pad_size - height_w) // stride
+    width_y = 1 + (width_x + 2 * pad_size - width_w) // stride
 
     npad = ((0, 0), (0, 0), (pad_size, pad_size), (pad_size, pad_size))
 
@@ -52,23 +49,29 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
 
     K = pad_size
 
-    for p in range(1, height_x):
+    for cx in range(channels_x):
 
-        for q in range(1, width_x):
+        for cw in range(channels_w):
 
-            for r in range(-K, K):
+            for nf in range(num_filters):
 
-                for s in range(-K, K):
+                for p in range(0, height_x):
 
-                    print(output_layer[p, q].shape)
+                    for q in range(0, width_x):
 
-                    output_layer[p, q] += input_padded[p +
-                                                       r, q + s] @ weight[r, s]
+                        for r in range(-K, K):
 
-                    # for c in range(channels_x):
-                    #
-                    #     output_layer[:, c, p, q] += input_padded[:, c, p +
-                    #                                              r, q + s] @ weight[r, s]
+                            for s in range(-K, K):
+
+                                output_layer[:, nf, p, q] += \
+                                    np.dot(input_padded[:, cx, p + r, q + s],
+                                           weight[nf, cw, r, s])
+                            # print(output_layer[:, nf, p, q])
+
+        # print(input_padded[:, cx, p + r, q + s] * weight[nf, cw, r, s])
+
+    print(output_layer[0, 0, 0, :])
+    print(output_layer[0, 0, 3, :])
 
     assert channels_w == channels_x, (
         "The number of filter channels be the same as the number of input layer channels")
