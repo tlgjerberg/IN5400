@@ -38,8 +38,12 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
     (batch_size, channels_x, height_x, width_x) = input_layer.shape
     (num_filters, channels_w, height_w, width_w) = weight.shape
 
+    # print(height_x, width_x)
+
     height_y = 1 + (height_x + 2 * pad_size - height_w) // stride
     width_y = 1 + (width_x + 2 * pad_size - width_w) // stride
+
+    # print(height_y, width_y)
 
     npad = ((0, 0), (0, 0), (pad_size, pad_size), (pad_size, pad_size))
 
@@ -49,29 +53,32 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
 
     K = pad_size
 
-    for cx in range(channels_x):
+    for nf in range(num_filters):
 
-        for cw in range(channels_w):
+        output_layer[:, nf, :, :] += bias[nf]
 
-            for nf in range(num_filters):
+        for b in range(batch_size):
+
+            for c in range(channels_x):
 
                 for p in range(0, height_x):
 
                     for q in range(0, width_x):
 
-                        for r in range(-K, K):
+                        for r in range(2 * K + 1):
 
-                            for s in range(-K, K):
+                            for s in range(2 * K + 1):
 
-                                output_layer[:, nf, p, q] += \
-                                    np.dot(input_padded[:, cx, p + r, q + s],
-                                           weight[nf, cw, r, s])
-                            # print(output_layer[:, nf, p, q])
+                                output_layer[b, nf, p, q] += \
+                                    np.dot(input_padded[b, c, p + r, q + s],
+                                           weight[nf, c, r, s])
 
-        # print(input_padded[:, cx, p + r, q + s] * weight[nf, cw, r, s])
+        # output_layer[:, nf, :, :] += bias[nf]
+        # print(output_layer[:, nf, p, q])
 
-    print(output_layer[0, 0, 0, :])
-    print(output_layer[0, 0, 3, :])
+    # print(input_padded[:, cx, p + r, q + s] * weight[nf, cw, r, s])
+    print('output:')
+    print(output_layer)
 
     assert channels_w == channels_x, (
         "The number of filter channels be the same as the number of input layer channels")
