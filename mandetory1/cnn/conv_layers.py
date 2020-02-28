@@ -49,6 +49,8 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
 
     input_padded = np.pad(input_layer, npad)
 
+    # print(input_padded.shape)
+
     output_layer = np.zeros((batch_size, num_filters, height_y, width_y))
 
     K = pad_size
@@ -61,9 +63,9 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
 
             for c in range(channels_x):
 
-                for p in range(0, height_x):
+                for p in range(0, height_y):
 
-                    for q in range(0, width_x):
+                    for q in range(0, width_y):
 
                         for r in range(2 * K + 1):
 
@@ -72,13 +74,6 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
                                 output_layer[b, nf, p, q] += \
                                     np.dot(input_padded[b, c, p + r, q + s],
                                            weight[nf, c, r, s])
-
-        # output_layer[:, nf, :, :] += bias[nf]
-        # print(output_layer[:, nf, p, q])
-
-    # print(input_padded[:, cx, p + r, q + s] * weight[nf, cw, r, s])
-    print('output:')
-    print(output_layer)
 
     assert channels_w == channels_x, (
         "The number of filter channels be the same as the number of input layer channels")
@@ -103,7 +98,8 @@ def conv_layer_backward(output_layer_gradient, input_layer, weight, bias, pad_si
         bias_gradient: Gradient of the loss L with respect to the biases b
     """
     # TODO: Task 2.2
-    input_layer_gradient, weight_gradient, bias_gradient = None, None, None
+    input_layer_gradient, weight_gradient, bias_gradient = np.zeros_like(
+        input_layer), np.zeros_like(weight), np.zeros_like(bias)
 
     batch_size, channels_y, height_y, width_y = output_layer_gradient.shape
     batch_size, channels_x, height_x, width_x = input_layer.shape
@@ -113,6 +109,29 @@ def conv_layer_backward(output_layer_gradient, input_layer, weight, bias, pad_si
         "The number of filters must be the same as the number of output layer channels")
     assert channels_w == channels_x, (
         "The number of filter channels be the same as the number of input layer channels")
+
+    K = pad_size
+
+    for b in range(batch_size):
+
+        for c in range(channels_y):
+
+            for nf in range(num_filters):
+
+                for p in range(0, height_y):
+
+                    for q in range(0, width_y):
+
+                        bias_gradient[nf] += output_layer_gradient[b, c, p, q]
+
+                        for r in range(2 * K + 1):
+
+                            for s in range(2 * K + 1):
+
+                                weight_gradient += output_layer_gradient[b,
+                                                                         c, p, q] * weight[nf, c, r, s]
+                                # input_layer_gradient[b, nf, p, q] +=
+                                pass
 
     return input_layer_gradient, weight_gradient, bias_gradient
 
