@@ -163,15 +163,11 @@ def cross_entropy_cost(Y_proposed, Y_reference):
     m = Y_proposed.shape[1]
     cost = -1. / m * np.sum(Y_reference * np.log(Y_proposed))
 
-    # Setting the largest element of each column = 1 and other elements to 0
-    row_maxes = Y_proposed.max(axis=0, keepdims=True)
-    np.where(Y_proposed == row_maxes, 1, 0)
-    Y_proposed[:] = np.where(Y_proposed == row_maxes, 1, 0)
-
+    num_correct = 0
     for i in range(m):
-        difference = np.where(Y_proposed[:, i] - Y_reference[:, i] == 0, 1, 0)
 
-    num_correct = np.sum(difference)
+        if np.argmax(Y_proposed[:, i]) == np.argmax(Y_reference[:, i]):
+            num_correct += 1
 
     return cost, num_correct
 
