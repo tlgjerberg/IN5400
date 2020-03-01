@@ -105,6 +105,11 @@ def conv_layer_backward(output_layer_gradient, input_layer, weight, bias, pad_si
     batch_size, channels_x, height_x, width_x = input_layer.shape
     num_filters, channels_w, height_w, width_w = weight.shape
 
+    print(output_layer_gradient.shape)
+    print(input_layer.shape)
+    print(weight.shape)
+    print(channels_x, channels_y)
+
     assert num_filters == channels_y, (
         "The number of filters must be the same as the number of output layer channels")
     assert channels_w == channels_x, (
@@ -113,25 +118,33 @@ def conv_layer_backward(output_layer_gradient, input_layer, weight, bias, pad_si
     K = pad_size
 
     for b in range(batch_size):
-
-        for c in range(channels_y):
-
-            for nf in range(num_filters):
-
+        # print('b', b)
+        for nf in range(num_filters):
+            # print('nf', nf)
+            for c in range(channels_y):
+                # print('c', c)
                 for p in range(0, height_y):
-
+                    # print('p', p)
                     for q in range(0, width_y):
+                        # print('q', q)
 
-                        bias_gradient[nf] += output_layer_gradient[b, c, p, q]
+                        bias_gradient[nf] += output_layer_gradient[b, nf, p, q]
 
-                        for r in range(2 * K + 1):
+                        # for r in range(2 * K + 1):
+                        #     for s in range(2 * K + 1):
+                        for r in range(-K, K):
 
-                            for s in range(2 * K + 1):
+                            for s in range(-K, K):
 
-                                weight_gradient += output_layer_gradient[b,
-                                                                         c, p, q] * weight[nf, c, r, s]
-                                # input_layer_gradient[b, nf, p, q] +=
-                                pass
+                                weight_gradient[nf, c, r, s] = \
+                                    output_layer_gradient[b, c, p, q] * \
+                                    input_layer[b, c, p + r, q + s]
+
+                                input_layer_gradient[b, nf, p, q] += \
+                                    output_layer_gradient[b, c, p, q] * \
+                                    weight[nf, c, r, s]
+
+    print(bias_gradient)
 
     return input_layer_gradient, weight_gradient, bias_gradient
 
