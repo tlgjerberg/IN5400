@@ -49,17 +49,17 @@ def initialization(conf):
 
     L = len(conf['layer_dimensions'])
 
-    for j in range(1, L):
+    for l in range(1, L):
 
-        b = np.zeros((conf['layer_dimensions'][j], 1))
+        b = np.zeros((conf['layer_dimensions'][l], 1))
         W = np.random.normal(
-            0.0, np.sqrt(
-                2 / conf['layer_dimensions'][j]),
-            size=[conf['layer_dimensions'][j - 1],
-                  conf['layer_dimensions'][j]])
+            0.0,
+            2 / conf['layer_dimensions'][l],
+            size=[conf['layer_dimensions'][l - 1],
+                  conf['layer_dimensions'][l]])
 
-        params.update({f'W_{j}': W})
-        params.update({f'b_{j}': b})
+        params.update({f'W_{l}': W})
+        params.update({f'b_{l}': b})
 
     return params
 
@@ -75,6 +75,10 @@ def activation(Z, activation_function):
     # TODO: Task 1.2 a)
     if activation_function == 'relu':
         return np.where(Z >= 0, Z, 0)
+
+    if activation_function == 'leaky relu':
+        return np.where(Z >= 0, Z, Z * 0.01)
+
     else:
         print("Error: Unimplemented activation function: {}", activation_function)
         return None
@@ -95,8 +99,8 @@ def softmax(Z):
     """
 
     Z_ = Z - np.max(Z)
-
     t = Z_ - np.log(np.sum(np.exp(Z_), axis=0))
+
     return np.exp(t)
 
 
@@ -183,6 +187,10 @@ def activation_derivative(Z, activation_function):
     # TODO: Task 1.4 a)
     if activation_function == 'relu':
         return np.where(Z >= 0, 1, 0)
+
+    if activation_function == 'leaky relu':
+        return np.where(Z >= 0, 1, 0.01)
+
     else:
         print("Error: Unimplemented derivative of activation function: {}",
               activation_function)
