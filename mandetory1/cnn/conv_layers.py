@@ -38,18 +38,12 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
     (batch_size, channels_x, height_x, width_x) = input_layer.shape
     (num_filters, channels_w, height_w, width_w) = weight.shape
 
-    # print(height_x, width_x)
-
     height_y = 1 + (height_x + 2 * pad_size - height_w) // stride
     width_y = 1 + (width_x + 2 * pad_size - width_w) // stride
-
-    # print(height_y, width_y)
 
     npad = ((0, 0), (0, 0), (pad_size, pad_size), (pad_size, pad_size))
 
     input_padded = np.pad(input_layer, npad)
-
-    # print(input_padded.shape)
 
     output_layer = np.zeros((batch_size, num_filters, height_y, width_y))
 
@@ -61,19 +55,19 @@ def conv_layer_forward(input_layer, weight, bias, pad_size=1, stride=1):
 
         for b in range(batch_size):
 
-            for c in range(channels_x):
+            for k in range(channels_x):
 
-                for p in range(0, height_y):
+                for p in enumerate(range(0, height_x, stride)):
 
-                    for q in range(0, width_y):
+                    for q in enumerate(range(0, width_x, stride)):
 
                         for r in range(2 * K + 1):
 
                             for s in range(2 * K + 1):
 
-                                output_layer[b, nf, p, q] += \
-                                    np.dot(input_padded[b, c, p + r, q + s],
-                                           weight[nf, c, r, s])
+                                output_layer[b, nf, p[0], q[0]] += \
+                                    input_padded[b, k, p[1] + r, q[1] + s] * \
+                                    weight[nf, k, r, s]
 
     assert channels_w == channels_x, (
         "The number of filter channels be the same as the number of input layer channels")
@@ -105,10 +99,14 @@ def conv_layer_backward(output_layer_gradient, input_layer, weight, bias, pad_si
     batch_size, channels_x, height_x, width_x = input_layer.shape
     num_filters, channels_w, height_w, width_w = weight.shape
 
-    print(output_layer_gradient.shape)
-    print(input_layer.shape)
-    print(weight.shape)
-    print(channels_x, channels_y)
+    print('olg', output_layer_gradient.shape)
+    print('il', input_layer.shape)
+    print('weight', weight.shape)
+    print('ch x: ', channels_x, 'ch y: ', channels_y)
+
+    npad = ((0, 0), (0, 0), (pad_size, pad_size), (pad_size, pad_size))
+    olg_padded = np.pad(output_layer_gradient, npad)
+    input_padded = np.pad(input_layer, npad)
 
     assert num_filters == channels_y, (
         "The number of filters must be the same as the number of output layer channels")
@@ -118,33 +116,50 @@ def conv_layer_backward(output_layer_gradient, input_layer, weight, bias, pad_si
     K = pad_size
 
     for b in range(batch_size):
-        # print('b', b)
+
         for nf in range(num_filters):
-            # print('nf', nf)
-            for c in range(channels_y):
-                # print('c', c)
-                for p in range(0, height_y):
-                    # print('p', p)
-                    for q in range(0, width_y):
-                        # print('q', q)
 
-                        bias_gradient[nf] += output_layer_gradient[b, nf, p, q]
+            for p in range(0, height_y):
 
-                        # for r in range(2 * K + 1):
-                        #     for s in range(2 * K + 1):
-                        for r in range(-K, K):
+                for q in range(0, width_y):
 
-                            for s in range(-K, K):
+                    bias_gradient[nf] += output_layer_gradient[b, nf, p, q]
 
-                                weight_gradient[nf, c, r, s] = \
-                                    output_layer_gradient[b, c, p, q] * \
-                                    input_layer[b, c, p + r, q + s]
+                    for k in range(channels_x):
 
-                                input_layer_gradient[b, nf, p, q] += \
-                                    output_layer_gradient[b, c, p, q] * \
-                                    weight[nf, c, r, s]
+                        for r in range(2 * K + 1):
 
-    print(bias_gradient)
+                            for s in range(2 * K + 1):
+
+                                # for r in range(-K, K + 1):
+                                #
+                                #     for s in range(-K, K + 1):
+
+                                weight_gradient[nf, k, r, s] += \
+                                    output_layer_gradient[b, nf, p, q] * \
+                                    input_padded[b, k, p + r, q + s]
+
+                                # input_layer_gradient[b, k, p, q] += \
+                                #     olg_padded[b, nf, p, q] * \
+                                #     weight[nf, k, -r, -s]
+
+    for b in range(batch_size):
+
+        for nf in range(num_filters):
+
+            for p in range(0, height_y):
+
+                for q in range(0, width_y):
+
+                    for k in range(channels_x):
+
+                        for r in range(-K, K + 1):
+
+                            for s in range(-K, K + 1):
+
+                                input_layer_gradient[b, k, p, q] += \
+                                    olg_padded[b, nf, p, q] * \
+                                    weight[nf, k, -r, -s]
 
     return input_layer_gradient, weight_gradient, bias_gradient
 
