@@ -99,11 +99,7 @@ def conv_layer_backward(output_layer_gradient, input_layer, weight, bias, pad_si
     batch_size, channels_x, height_x, width_x = input_layer.shape
     num_filters, channels_w, height_w, width_w = weight.shape
 
-    print('olg', output_layer_gradient.shape)
-    print('il', input_layer.shape)
-    print('weight', weight.shape)
-    print('ch x: ', channels_x, 'ch y: ', channels_y)
-
+    # Padding
     npad = ((0, 0), (0, 0), (pad_size, pad_size), (pad_size, pad_size))
     olg_padded = np.pad(output_layer_gradient, npad)
     input_padded = np.pad(input_layer, npad)
@@ -131,36 +127,28 @@ def conv_layer_backward(output_layer_gradient, input_layer, weight, bias, pad_si
 
                             for s in range(2 * K + 1):
 
-                                # for r in range(-K, K + 1):
-                                #
-                                #     for s in range(-K, K + 1):
-
                                 weight_gradient[nf, k, r, s] += \
                                     output_layer_gradient[b, nf, p, q] * \
                                     input_padded[b, k, p + r, q + s]
 
-                                # input_layer_gradient[b, k, p, q] += \
-                                #     olg_padded[b, nf, p, q] * \
-                                #     weight[nf, k, -r, -s]
+    print(weight_gradient.shape)
 
-    for b in range(batch_size):
+    # New loop for testing input_layer_gradient
+    for k in range(channels_x):
 
-        for nf in range(num_filters):
+        for p in range(0, height_y):
 
-            for p in range(0, height_y):
+            for q in range(0, width_y):
+                ilg_sum = 0
+                for nf in range(num_filters):
 
-                for q in range(0, width_y):
+                    for r in range(-K, K + 1):
 
-                    for k in range(channels_x):
+                        for s in range(-K, K + 1):
+                            ilg_sum += olg_padded[:, nf, p + r, q + s] * \
+                                weight[nf, k, -r + 1, -s + 1]
 
-                        for r in range(-K, K + 1):
-
-                            for s in range(-K, K + 1):
-
-                                input_layer_gradient[b, k, p, q] += \
-                                    olg_padded[b, nf, p, q] * \
-                                    weight[nf, k, -r, -s]
-
+                        input_layer_gradient[:, k, p - 1, q - 1] = ilg_sum
     return input_layer_gradient, weight_gradient, bias_gradient
 
 
