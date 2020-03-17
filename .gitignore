@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Ignored datafolders
+exercices/week9/in5400_2020_lab_detection_tenative/in5400_2020_detection_data/
