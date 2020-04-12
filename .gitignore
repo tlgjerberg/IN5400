@@ -131,3 +131,4 @@ dmypy.json
 #Ignored datafolders
 exercises/week9/in5400_2020_lab_detection_tenative/in5400_2020_detection_data/
 exercises/week7/CIFAR10/
+exercises/week4/data/
