@@ -127,3 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Ignored datafolders
+exercises/week9/in5400_2020_lab_detection_tenative/in5400_2020_lab_detection_data/
+exercises/week7/CIFAR10/
+exercises/week7/CIFAR10/cifar-10-python.tar.gz
